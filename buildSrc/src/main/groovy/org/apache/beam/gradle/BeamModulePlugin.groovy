@@ -499,6 +499,7 @@ class BeamModulePlugin implements Plugin<Project> {
     def testcontainers_version = "1.16.3"
     def arrow_version = "5.0.0"
     def jmh_version = "1.34"
+    def camel_version = "3.18.0"
 
     // Export Spark versions, so they are defined in a single place only
     project.ext.spark2_version = spark2_version
@@ -737,6 +738,12 @@ class BeamModulePlugin implements Plugin<Project> {
         arrow_vector                                : "org.apache.arrow:arrow-vector:$arrow_version",
         arrow_memory_core                           : "org.apache.arrow:arrow-memory-core:$arrow_version",
         arrow_memory_netty                          : "org.apache.arrow:arrow-memory-netty:$arrow_version",
+        camel_core_engine :"org.apache.camel:camel-core-engine:$camel_version",
+        camel_main :"org.apache.camel:camel-main:$camel_version",
+        camel_bean :"org.apache.camel:camel-bean:$camel_version",
+        camel_log :"org.apache.camel:camel-log:$camel_version",
+        camel_timer :"org.apache.camel:camel-timer:$camel_version",
+        camel_test_main_junit5 :"org.apache.camel:camel-test-main-junit5:$camel_version",
       ],
       groovy: [
         groovy_all: "org.codehaus.groovy:groovy-all:2.4.13",
