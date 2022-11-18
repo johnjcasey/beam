@@ -15,8 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.beam.sdk.io.camel;
+
 
 import com.google.auto.value.AutoValue;
 import java.util.Map;
@@ -25,7 +25,10 @@ import org.apache.beam.sdk.annotations.Experimental;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.util.Preconditions;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.camel.CamelContext;
+import org.apache.camel.ProducerTemplate;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.engine.DefaultProducerTemplate;
 
@@ -40,42 +43,57 @@ public class CamelIO {
   @AutoValue.CopyAnnotations
   public abstract static class Write<K> extends PTransform<PCollection<K>, PCollection<K>> {
 
+    abstract String getEndpoint();
+
+    abstract Map<String,String> getOptions();
+
     abstract Builder<K> toBuilder();
 
     @Experimental(Experimental.Kind.PORTABILITY)
     @AutoValue.Builder
     abstract static class Builder<K> {
 
+      public abstract Builder<K> setEndpoint(String value);
+
+      public abstract Builder<K> setOptions(Map<String, String> value);
+
       abstract Write<K> build();
+    }
+
+    public Write<K> withEndpoint(String endpoint){
+      Preconditions.checkArgumentNotNull(endpoint);
+      return this.toBuilder().setEndpoint(endpoint).build();
+    }
+
+    public Write<K> withOptions(Map<String,String> options){
+      Preconditions.checkArgumentNotNull(options);
+      return this.toBuilder().setOptions(options).build();
     }
 
     @Override
     public PCollection<K> expand(PCollection<K> input) {
-      return input.apply(ParDo.of(new WriteFn<K>()));
+      return input.apply(ParDo.of(new WriteFn<K>(getEndpoint(),getOptions())));
     }
 
   }
 
   private static class WriteFn<K> extends DoFn<K,K> {
-    ProducerTemplate template;
-
-    private String endpoint;
-    private Map<String,String> options;
+    private ProducerTemplate template;
+    private String uri;
 
     public WriteFn(String endpoint, Map<String, String> options){
-      this.endpoint = endpoint;
-      this.options = options;
+      uri = createEndpoint(endpoint,options);
     }
 
     @StartBundle
     private void startBundle(){
       CamelContext context = new DefaultCamelContext();
-      template = new DefaultProducerTemplate(context, createEndpoint(endpoint,options));
+      template = new DefaultProducerTemplate(context);
     }
 
     @ProcessElement
     private void processElement(@Element K element, OutputReceiver<K> receiver){
-      template.sendBody(element);
+      template.sendBody(uri, element);
       receiver.output(element);
     }
 
